@@ -1,0 +1,144 @@
+format:
+  prefix: "<gray>[<gold>HippoStaff</gold>]</gray> "
+
+hippostaff:
+  reloaded: "<green>HippoStaff configuration reloaded.</green>"
+  usage: "<yellow>Usage: <white>/hippostaff reload</white>"
+
+errors:
+  no-permission: "<red>You do not have permission to do this."
+  player-only: "<red>Only players can use this command."
+  player-not-found: "<red>Player not found."
+  usage: "<yellow>Usage: <white>/vanish [on|off]</white>"
+
+vanish:
+  disabled: "<red>Vanish disabled. You are visible again."
+  enabled: "<green>Vanish enabled. Players without permission can no longer see you."
+  actionbar:
+    vanished: "<gray>You are currently vanished as <white>%player_name%</white></gray>"
+  bossbar:
+    vanished: "<red>You are vanished</red>"
+  list:
+    empty: "<yellow>No players are currently vanished.</yellow>"
+    footer: "<gray>Use <white>/vanish</white> to toggle your own vanish.</gray>"
+    header: "<gold>Vanished Players</gold> <gray>(%%count%%)</gray>"
+    line: "<gray>-</gray> <white>%%player%%</white>"
+  pickup:
+    disabled: "<yellow>Smart pickup disabled. Item pickup is blocked while vanished.</yellow>"
+    enabled: "<green>Smart pickup enabled. You can pick up items while vanished.</green>"
+    usage: "<yellow>Usage: <white>/vanishpickup [on|off]</white>"
+  placeholder:
+    prefix: "<dark_gray>[<green>V</green>]</dark_gray>"
+  rules:
+    blocked:
+      break: "<red>You cannot break blocks while vanished.</red>"
+      chat-confirm: "<yellow>Chat is protected in vanish. Send the exact same message again to confirm.</yellow>"
+      drop: "<red>You cannot drop items while vanished.</red>"
+      hit: "<red>You cannot hit entities while vanished.</red>"
+      interact: "<red>You cannot interact while vanished.</red>"
+      physical: "<red>You cannot trigger physical blocks while vanished.</red>"
+      pickup: "<red>You cannot pick up items while vanished.</red>"
+      place: "<red>You cannot place blocks while vanished.</red>"
+      throw: "<red>You cannot throw or shoot while vanished.</red>"
+
+fly:
+  enabled: "<green>Flight enabled."
+  disabled: "<yellow>Flight disabled."
+  enabled-other: "<green>Enabled flight for <white>%%player%%</white>."
+  disabled-other: "<yellow>Disabled flight for <white>%%player%%</white>."
+
+staffchat:
+  console: "[SC|%%server%%] %%player%%: %%message%%"
+  format: "<gray>[SC|%%server%%]</gray> <gray>%%player%%</gray><gray>:</gray> <white>%%message%%</white>"
+  discord-format: "<gray>[<red>SC</red>/<blue>Discord</blue>]</gray> <white>%%username%%</white><gray>:</gray> <white>%%message%%</white>"
+  sent: "<gray>Sent to staff chat.</gray>"
+  toggle-on: "<green>Staff chat mode enabled.</green>"
+  toggle-off: "<yellow>Staff chat mode disabled.</yellow>"
+
+private-message:
+  no-self: "<red>You cannot message yourself.</red>"
+  from: "<gray>[From %%player%%]</gray> <white>%%message%%</white>"
+  no-player: "<red>Player <white>%%player%%</white> is not online.</red>"
+  no-reply: "<red>You have nobody to reply to.</red>"
+  reply-usage: "<yellow>Usage: <white>/r <message></white>"
+  to: "<gray>[To %%player%%]</gray> <white>%%message%%</white>"
+  usage: "<yellow>Usage: <white>/msg <player> <message></white>"
+
+grant:
+  usage: "<yellow>Usage: <white>/grant <player> <group> <duration|perm> [reason]</white>"
+  revoke-usage: "<yellow>Usage: <white>/revoke <player> <group></white>"
+  history-usage: "<yellow>Usage: <white>/granthistory <player></white>"
+  list-usage: "<yellow>Usage: <white>/grantlist <player></white>"
+  invalid-duration: "<red>Invalid duration. Example: <white>7d</white>, <white>12h</white>, or <white>perm</white>."
+  available-groups: "<gray>Grantable groups:</gray> <white>%%groups%%</white>"
+  player-not-found: "<red>Player not found.</red>"
+  group-not-grantable: "<red>Group <white>%%group%%</white> is not grantable.</red>"
+  success: "<green>Granted <white>%%group%%</white> to <white>%%player%%</white> for <white>%%duration%%</white>.</green>"
+  revoked: "<yellow>Revoked <white>%%group%%</white> from <white>%%player%%</white>.</yellow>"
+  list-empty: "<yellow>No active grants for this player.</yellow>"
+  list-header: "<gold>Active Grants for %%player%%</gold>"
+  list-line: "<gray>-</gray> <white>%%group%%</white> <gray>(remaining: %%remaining%%, by %%actor%%)</gray>"
+  history-empty: "<yellow>No grant history for this player.</yellow>"
+  history-header: "<gold>Grant History for %%player%%</gold>"
+  history-line: "<gray>[%%time%%]</gray> <white>%%action%%</white> <gray>group=</gray><white>%%group%%</white> <gray>by</gray> <white>%%actor%%</white>"
+  notify:
+    granted: "<green>You have been granted <white>%%group%%</white> by <white>%%actor%%</white> for <white>%%duration%%</white>.</green>"
+    revoked: "<yellow>Your <white>%%group%%</white> grant was revoked by <white>%%actor%%</white>.</yellow>"
+  gui:
+    title:
+      main: "<dark_gray>Grant Panel <gray>| <white>%%player%%"
+      group-select: "<dark_gray>Select Group <gray>| <white>%%player%%"
+      duration-select: "<dark_gray>Select Duration <gray>| <white>%%group%%"
+      revoke-select: "<dark_gray>Revoke Grant <gray>| <white>%%player%%"
+      active-list: "<dark_gray>Active Grants <gray>| <white>%%player%%"
+      history: "<dark_gray>Grant History <gray>| <white>%%player%%"
+    main:
+      grant:
+        name: "<green><bold>Grant Group"
+        lore:
+          - "<gray>Assign an eligible staff group"
+          - "<gray>to this player."
+      revoke:
+        name: "<red><bold>Revoke Group"
+        lore:
+          - "<gray>Remove an existing active grant."
+      history:
+        name: "<yellow><bold>Grant History"
+        lore:
+          - "<gray>View recent grant actions."
+      active:
+        name: "<aqua><bold>Active Grants"
+        lore:
+          - "<gray>View current active grants."
+    group-item:
+      name: "%%group_display%%"
+      lore:
+        - "<gray>Click to choose grant duration."
+    duration-item:
+      name: "<white>%%duration%%"
+      lore:
+        - "<gray>Click to apply this duration."
+    revoke-item:
+      name: "<red>%%group%%"
+      lore:
+        - "<gray>Remaining: <white>%%remaining%%"
+        - "<gray>Granted by: <white>%%actor%%"
+        - "<red>Click to revoke"
+    active-item:
+      name: "<green>%%group%%"
+      lore:
+        - "<gray>Remaining: <white>%%remaining%%"
+        - "<gray>Granted by: <white>%%actor%%"
+    history-item:
+      name: "<white>%%action%% <gray>- <white>%%group%%"
+      lore:
+        - "<gray>By: <white>%%actor%%"
+        - "<gray>At: <white>%%time%%"
+    back:
+      name: "<yellow>Back"
+      lore:
+        - "<gray>Return to the main panel."
+    back-groups:
+      name: "<yellow>Back"
+      lore:
+        - "<gray>Return to group selection."

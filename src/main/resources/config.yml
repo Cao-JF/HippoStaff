@@ -1,0 +1,194 @@
+# Global identifier for this server instance (used in synced staff chat and future cross-server features).
+server-id: "lobby-1"
+
+links:
+  discord:
+    - "<gold>Discord</gold>: <white>https://discord.gg/your-server</white>"
+  website:
+    - "<gold>Website</gold>: <white>https://example.com</white>"
+  rules:
+    - "<gold>Server Rules</gold>"
+    - "<gray>1.</gray> <white>Be respectful to everyone.</white>"
+    - "<gray>2.</gray> <white>No cheating or exploiting.</white>"
+    - "<gray>3.</gray> <white>Keep chat appropriate.</white>"
+
+# Commands executed as the joining player.
+# Supports %player% and {player}.
+# Delay before executing onjoin commands to avoid join-time plugin races.
+onjoin:
+  enabled: false
+  delay: 20
+  commands:
+    - ""
+
+storage:
+  # Primary persistence backend for vanish states.
+  # Options: YAML, MARIADB
+  type: "YAML"
+  redis:
+    # Enables Redis pub/sub for near-instant cross-server sync.
+    # Keep this false if you only run one server.
+    enabled: false
+    # Redis host/IP.
+    host: "127.0.0.1"
+    # Redis port.
+    port: 6379
+    # Redis auth password (leave empty if none).
+    password: ""
+    # Redis logical database index.
+    database: 0
+    # Pub/sub channel used by HippoStaff.
+    channel: "hippostaff:vanish"
+  sync:
+    # Periodic storage pull to refresh states.
+    # Useful fallback even when Redis is enabled.
+    enabled: true
+    # Poll interval for storage sync task.
+    interval-seconds: 5
+  mariadb:
+    # MariaDB hostname/IP.
+    host: "127.0.0.1"
+    # MariaDB port.
+    port: 3306
+    # Database name that stores vanish table.
+    database: "hippostaff"
+    # MariaDB username.
+    username: "root"
+    # MariaDB password.
+    password: "change-me"
+    # Enables SSL in JDBC URL.
+    ssl: false
+    # Connection pool max size.
+    pool-size: 8
+
+staff-chat:
+  # Chat prefix to send one-off staff messages (e.g. "#hello" or "!hello").
+  trigger-prefix: "#"
+  # Shows a tiny confirmation when sending with prefix mode.
+  notify-prefixed: false
+  sync:
+    # Uses storage.redis connection settings above.
+    # Cross-server synchronization via Redis pub/sub.
+    enabled: true
+    # Redis channel used for staff chat messages.
+    channel: "hippostaff:staffchat"
+  discord:
+    enabled: false
+    # Webhook URL for Minecraft → Discord (messages appear with player name + head as sender).
+    webhook-url: ""
+    # Bot token for Discord → Minecraft (gateway listener for bidirectional chat).
+    bot-token: ""
+    # ID of the Discord channel to watch and post into.
+    channel-id: ""
+    # Player head image URL. %%player%% = username, %%uuid%% = UUID.
+    head-url: "https://mc-heads.net/avatar/%%player%%/64"
+
+private-message:
+  sync:
+    # Cross-server private message delivery and shared tab-complete player registry.
+    enabled: true
+    # Redis channel used for PM packets and player presence updates.
+    channel: "hippostaff:pm"
+    # Redis hash key storing known players (uuid -> last known name).
+    known-players-key: "hippostaff:players"
+    # Redis hash key storing currently online players across all servers.
+    online-players-key: "hippostaff:players:online"
+
+grant-system:
+  enabled: true
+  # Interval for automatic grant expiration checks.
+  expiration-check-interval-ticks: 200
+  webhook:
+    enabled: false
+    url: ""
+
+vanish:
+  ghost-effect:
+    # Visual "ghost view" effects applied while vanished.
+    enabled: true
+    # Valid potion effect names (Minecraft namespace, uppercase common names are fine).
+    effects:
+      - "INVISIBILITY"
+      - "NIGHT_VISION"
+    # Potion effect render options.
+    ambient: true
+    particles: false
+    icon: false
+
+  zero-collision:
+    # Ghost collision mode. Vanished players cannot push entities and are not pushable.
+    enabled: true
+
+  projectile-pass-through:
+    # Native Paper projectile collision cancel for vanished players.
+    # Arrows, tridents, snowballs and other projectiles pass through.
+    enabled: true
+
+  server-list-hiding:
+    # Adjust ping player count by subtracting vanished online players.
+    # Example: if only one vanished player is online -> 0/<max>.
+    enabled: true
+
+  smart-pickup:
+    # Default state for /vanishpickup per player.
+    # false means pickup is blocked while vanished unless player enables it.
+    default-enabled: false
+
+  simple-voice-chat:
+    # Soft integration. Only applies when Simple Voice Chat is installed.
+    enabled: true
+    force-group:
+      # Group settings used via Simple Voice Chat API.
+      name: "Staff Vanish"
+      # NORMAL, OPEN, ISOLATED
+      type: "ISOLATED"
+      # Persistent groups survive when empty.
+      persistent: true
+      # Hidden groups don't appear in normal group list UI.
+      hidden: true
+      # Leave empty for no password.
+      password: ""
+
+  # Vanish behavior rules (global, config-only).
+  # These values are not editable in-game by command.
+  rules:
+    # false -> vanished players cannot break blocks.
+    can_break_blocks: false
+    # false -> vanished players cannot place blocks.
+    can_place_blocks: false
+    # false -> vanished players cannot interact with blocks/entities.
+    can_interact: false
+    # false -> vanished players cannot hit players/mobs.
+    can_hit_entities: false
+    # false -> vanished players cannot pick up items.
+    can_pickup_items: false
+    # false -> vanished players cannot drop items.
+    can_drop_items: false
+    # false -> chat requires confirmation each message.
+    can_chat: false
+    # false -> vanished players cannot trigger physical actions.
+    can_trigger_physical: false
+    # false -> vanished players cannot throw/shoot projectiles.
+    can_throw: false
+    # false -> mobs ignore vanished players.
+    mob_targeting: false
+  chat-confirmation:
+    # When can_chat is false, player must send the same message again within this window.
+    window-seconds: 8
+  actionbar:
+    # Send actionbar reminder while player is vanished.
+    enabled: true
+    # Reminder interval in ticks (20 ticks = 1 second).
+    interval-ticks: 20
+    # Permission required to receive actionbar vanish reminder.
+    permission: "hippostaff.vanish.actionbar"
+  bossbar:
+    # Show a bossbar while the player is vanished.
+    enabled: true
+    # Refresh interval in ticks for placeholder updates.
+    interval-ticks: 20
+    # Bossbar style options.
+    color: "RED"
+    overlay: "PROGRESS"
+    # 0.0 to 1.0
+    progress: 1.0

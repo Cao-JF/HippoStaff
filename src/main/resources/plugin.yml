@@ -1,0 +1,230 @@
+name: HippoStaff
+version: '${version}'
+main: net.mwtw.hippoStaff.Core
+api-version: '1.21.6'
+load: POSTWORLD
+softdepend: [ PlaceholderAPI, packetevents, voicechat, SimpleVoiceChat, LuckPerms ]
+
+commands:
+  vanish:
+    description: Toggle staff vanish mode.
+    usage: /vanish [on|off]
+    aliases: [ v ]
+    permission: hippostaff.vanish
+  vanishlist:
+    description: List all vanished players.
+    usage: /vanishlist
+    aliases: [ vl ]
+    permission: hippostaff.vanish.list
+  vanishpickup:
+    description: Toggle vanished item pickup behavior.
+    usage: /vanishpickup [on|off]
+    aliases: [ vp ]
+    permission: hippostaff.vanish.pickup
+  gm:
+    description: Set gamemode with shorthand support.
+    usage: /gm [a|c|s|sp|0|1|2|3] [player]
+    permission: minecraft.command.gamemode
+  gmc:
+    description: Set creative mode.
+    usage: /gmc [player]
+    permission: minecraft.command.gamemode.creative
+  gma:
+    description: Set adventure mode.
+    usage: /gma [player]
+    permission: minecraft.command.gamemode.adventure
+  gms:
+    description: Set survival mode.
+    usage: /gms [player]
+    permission: minecraft.command.gamemode.survival
+  gmsp:
+    description: Set spectator mode.
+    usage: /gmsp [player]
+    permission: minecraft.command.gamemode.spectator
+  gm0:
+    description: Set survival mode.
+    usage: /gm0 [player]
+    permission: minecraft.command.gamemode.survival
+  gm1:
+    description: Set creative mode.
+    usage: /gm1 [player]
+    permission: minecraft.command.gamemode.creative
+  gm2:
+    description: Set adventure mode.
+    usage: /gm2 [player]
+    permission: minecraft.command.gamemode.adventure
+  gm3:
+    description: Set spectator mode.
+    usage: /gm3 [player]
+    permission: minecraft.command.gamemode.spectator
+  day:
+    description: Set time to day.
+    usage: /day
+    permission: minecraft.command.time
+  noon:
+    description: Set time to noon.
+    usage: /noon
+    permission: minecraft.command.time
+  night:
+    description: Set time to night.
+    usage: /night
+    permission: minecraft.command.time
+  midnight:
+    description: Set time to midnight.
+    usage: /midnight
+    permission: minecraft.command.time
+  speed:
+    description: Set fly/walk speed.
+    usage: /speed <fly|walk> <0-10> [player]
+    permission: hippostaff.speed
+  flyspeed:
+    description: Set fly speed.
+    usage: /flyspeed <0-10> [player]
+    permission: hippostaff.speed.fly
+  walkspeed:
+    description: Set walk speed.
+    usage: /walkspeed <0-10> [player]
+    permission: hippostaff.speed.walk
+  repair:
+    description: Repair held item or all items.
+    usage: /repair [all] [player]
+    permission: hippostaff.repair
+  feed:
+    description: Feed yourself or another player.
+    usage: /feed [player]
+    permission: hippostaff.feed
+  fly:
+    description: Toggle flight for yourself or another player.
+    usage: /fly [on|off] [player]
+    permission: hippostaff.fly
+  msg:
+    description: Send a private message.
+    usage: /msg <player> <message>
+    aliases: [ tell, whisper, w ]
+    permission: hippostaff.msg
+  r:
+    description: Reply to the last private message.
+    usage: /r <message>
+    aliases: [ reply ]
+    permission: hippostaff.msg.reply
+  staffchat:
+    description: Toggle staff chat mode or send a staff message.
+    usage: /staffchat [message]
+    aliases: [ sc ]
+    permission: hippostaff.staffchat
+  discord:
+    description: Show the server Discord link.
+    usage: /discord
+    permission: hippostaff.links
+  website:
+    description: Show the server website.
+    usage: /website
+    permission: hippostaff.links
+  rules:
+    description: Show the server rules.
+    usage: /rules
+    permission: hippostaff.links
+  hippostaff:
+    description: HippoStaff administration command.
+    usage: /hippostaff reload
+    aliases: [ hs ]
+    permission: hippostaff.reload
+  grant:
+    description: Grant a staff group to a player.
+    usage: /grant <player> <group> <duration|perm> [reason]
+    permission: hippostaff.grant
+  revoke:
+    description: Revoke a staff group from a player.
+    usage: /revoke <player> <group>
+    permission: hippostaff.grant.revoke
+  granthistory:
+    description: View grant history for a player.
+    usage: /granthistory <player>
+    permission: hippostaff.grant.history
+  grantlist:
+    description: View active grants for a player.
+    usage: /grantlist <player>
+    permission: hippostaff.grant.list
+
+permissions:
+  hippostaff.vanish:
+    description: Allows a player to toggle vanish.
+    default: op
+  hippostaff.vanish.see:
+    description: Allows a player to see vanished staff.
+    default: op
+  hippostaff.vanish.actionbar:
+    description: Allows actionbar vanish reminders.
+    default: op
+  hippostaff.vanish.list:
+    description: Allows listing vanished players.
+    default: op
+  hippostaff.vanish.pickup:
+    description: Allows toggling smart vanish pickup behavior.
+    default: op
+  hippostaff.staffchat:
+    description: Allows using staff chat.
+    default: op
+  hippostaff.staffchat.see:
+    description: Allows receiving staff chat messages.
+    default: op
+  hippostaff.links:
+    description: Allows using /discord /website /rules.
+    default: true
+  hippostaff.reload:
+    description: Allows reloading HippoStaff runtime config.
+    default: op
+  hippostaff.timepreset:
+    description: Allows using /day /noon /night /midnight commands.
+    default: op
+  hippostaff.speed:
+    description: Base permission for speed commands.
+    default: op
+  hippostaff.speed.fly:
+    description: Allows setting fly speed.
+    default: op
+  hippostaff.speed.walk:
+    description: Allows setting walk speed.
+    default: op
+  hippostaff.speed.others:
+    description: Allows changing other players' speed.
+    default: op
+  hippostaff.repair:
+    description: Allows repairing held item.
+    default: op
+  hippostaff.repair.all:
+    description: Allows repairing entire inventory with /repair all.
+    default: op
+  hippostaff.repair.others:
+    description: Allows repairing other players.
+    default: op
+  hippostaff.feed:
+    description: Allows using /feed.
+    default: op
+  hippostaff.feed.others:
+    description: Allows feeding other players.
+    default: op
+  hippostaff.fly:
+    description: Allows using /fly.
+    default: op
+  hippostaff.fly.others:
+    description: Allows toggling flight for other players.
+    default: op
+  hippostaff.msg:
+    description: Allows using private message commands.
+    default: op
+  hippostaff.msg.reply:
+    description: Allows using /r.
+    default: op
+  hippostaff.grant:
+    description: Allows granting eligible staff groups.
+    default: op
+  hippostaff.grant.revoke:
+    description: Allows revoking staff grants.
+    default: op
+  hippostaff.grant.history:
+    description: Allows viewing grant history.
+    default: op
+  hippostaff.grant.list:
+    description: Allows viewing active grants.
+    default: op
