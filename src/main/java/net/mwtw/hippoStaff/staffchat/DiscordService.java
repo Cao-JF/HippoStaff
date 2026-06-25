@@ -36,7 +36,6 @@ public final class DiscordService {
                 this.plugin.getServer().getScheduler().runTask(this.plugin, () -> onDiscordMessage.accept(username, content));
         this.gatewayClient = new DiscordGatewayClient(this.plugin, token, channelId, mainThreadCallback);
         this.gatewayClient.connect();
-        this.plugin.getLogger().info("Discord gateway connected.");
     }
 
     public void stop() {
