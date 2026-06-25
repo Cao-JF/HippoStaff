@@ -4,7 +4,7 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.pubsub.RedisPubSubAdapter;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
-import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
+import io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands;
 import net.mwtw.hippoStaff.Core;
 
 import java.time.Duration;
@@ -14,10 +14,11 @@ import java.util.function.BiConsumer;
 public final class RedisSyncService {
     private final Core plugin;
     private final BiConsumer<UUID, Boolean> updateConsumer;
+    private final UUID serverId = UUID.randomUUID();
     private RedisClient redisClient;
     private StatefulRedisPubSubConnection<String, String> subscriberConnection;
     private StatefulRedisPubSubConnection<String, String> publisherConnection;
-    private RedisPubSubCommands<String, String> publisher;
+    private RedisPubSubAsyncCommands<String, String> publisher;
     private String channel;
 
     public RedisSyncService(Core plugin, BiConsumer<UUID, Boolean> updateConsumer) {
@@ -42,7 +43,7 @@ public final class RedisSyncService {
         this.redisClient = RedisClient.create(builder.build());
         this.publisherConnection = this.redisClient.connectPubSub();
         this.subscriberConnection = this.redisClient.connectPubSub();
-        this.publisher = this.publisherConnection.sync();
+        this.publisher = this.publisherConnection.async();
 
         this.subscriberConnection.addListener(new RedisPubSubAdapter<>() {
             @Override
@@ -52,6 +53,10 @@ public final class RedisSyncService {
                 }
                 SyncPacket packet = SyncPacket.parse(message);
                 if (packet == null) {
+                    return;
+                }
+                // Ignore messages this server published itself.
+                if (serverId.equals(packet.origin())) {
                     return;
                 }
                 updateConsumer.accept(packet.uuid(), packet.vanished());
@@ -65,7 +70,7 @@ public final class RedisSyncService {
         if (this.publisher == null) {
             return;
         }
-        this.publisher.publish(this.channel, SyncPacket.encode(uuid, vanished));
+        this.publisher.publish(this.channel, SyncPacket.encode(this.serverId, uuid, vanished));
     }
 
     public void close() {
@@ -80,18 +85,18 @@ public final class RedisSyncService {
         }
     }
 
-    private record SyncPacket(UUID uuid, boolean vanished) {
-        static String encode(UUID uuid, boolean vanished) {
-            return uuid + ":" + vanished;
+    private record SyncPacket(UUID origin, UUID uuid, boolean vanished) {
+        static String encode(UUID origin, UUID uuid, boolean vanished) {
+            return origin + ":" + uuid + ":" + vanished;
         }
 
         static SyncPacket parse(String input) {
-            String[] parts = input.split(":", 2);
-            if (parts.length != 2) {
+            String[] parts = input.split(":", 3);
+            if (parts.length != 3) {
                 return null;
             }
             try {
-                return new SyncPacket(UUID.fromString(parts[0]), Boolean.parseBoolean(parts[1]));
+                return new SyncPacket(UUID.fromString(parts[0]), UUID.fromString(parts[1]), Boolean.parseBoolean(parts[2]));
             } catch (IllegalArgumentException ignored) {
                 return null;
             }

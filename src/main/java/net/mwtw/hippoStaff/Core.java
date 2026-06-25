@@ -13,6 +13,7 @@ import net.mwtw.hippoStaff.command.ConfigTextCommand;
 import net.mwtw.hippoStaff.command.RepairCommand;
 import net.mwtw.hippoStaff.command.ReplyCommand;
 import net.mwtw.hippoStaff.command.RevokeCommand;
+import net.mwtw.hippoStaff.command.ScreenShareCommand;
 import net.mwtw.hippoStaff.command.SpeedCommand;
 import net.mwtw.hippoStaff.command.StaffChatCommand;
 import net.mwtw.hippoStaff.command.VanishCommand;
@@ -27,6 +28,7 @@ import net.mwtw.hippoStaff.grant.YamlGrantStorage;
 import net.mwtw.hippoStaff.listener.GrantGuiListener;
 import net.mwtw.hippoStaff.listener.PlayerConnectionListener;
 import net.mwtw.hippoStaff.listener.PrivateMessagePresenceListener;
+import net.mwtw.hippoStaff.listener.ScreenShareListener;
 import net.mwtw.hippoStaff.listener.ServerListVisibilityListener;
 import net.mwtw.hippoStaff.listener.StaffChatListener;
 import net.mwtw.hippoStaff.listener.VanishGhostListener;
@@ -36,6 +38,7 @@ import net.mwtw.hippoStaff.message.NetworkPlayerRegistry;
 import net.mwtw.hippoStaff.message.PrivateMessageManager;
 import net.mwtw.hippoStaff.message.PrivateMessageSyncService;
 import net.mwtw.hippoStaff.placeholder.HippoStaffExpansion;
+import net.mwtw.hippoStaff.screenshare.ScreenShareManager;
 import net.mwtw.hippoStaff.staffchat.StaffChatManager;
 import net.mwtw.hippoStaff.staffchat.StaffChatSyncService;
 import net.mwtw.hippoStaff.storage.MariaDbVanishStorage;
@@ -70,6 +73,7 @@ public final class Core extends JavaPlugin {
     private PrivateMessageSyncService privateMessageSyncService;
     private GrantManager grantManager;
     private GrantGuiService grantGuiService;
+    private ScreenShareManager screenShareManager;
 
     @Override
     public void onEnable() {
@@ -85,12 +89,14 @@ public final class Core extends JavaPlugin {
         this.privateMessageManager = new PrivateMessageManager(this, this.messageService, this.networkPlayerRegistry);
         this.grantManager = new GrantManager(this, this.messageService, createGrantStorage());
         this.grantGuiService = new GrantGuiService(this, this.grantManager, this.messageService);
+        this.screenShareManager = new ScreenShareManager(this, this.messageService);
 
         try {
             this.vanishStorage.init();
             this.ruleManager.init();
             this.pickupSettingsManager.init();
             this.grantManager.init();
+            this.screenShareManager.init();
         } catch (Exception exception) {
             getLogger().severe("Failed to initialize storage: " + exception.getMessage());
             getServer().getPluginManager().disablePlugin(this);
@@ -113,6 +119,7 @@ public final class Core extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new StaffChatListener(this.staffChatManager), this);
         getServer().getPluginManager().registerEvents(new PrivateMessagePresenceListener(this.privateMessageManager), this);
         getServer().getPluginManager().registerEvents(new GrantGuiListener(this.grantGuiService), this);
+        getServer().getPluginManager().registerEvents(new ScreenShareListener(this.screenShareManager, this.messageService), this);
 
         VanishCommand vanishCommand = new VanishCommand(this.vanishManager, this.messageService);
         registerCommand("vanish", vanishCommand, vanishCommand);
@@ -166,12 +173,15 @@ public final class Core extends JavaPlugin {
         registerCommand("revoke", new RevokeCommand(this, this.grantManager, this.grantGuiService, this.messageService), null);
         registerCommand("granthistory", new GrantHistoryCommand(this, this.grantManager, this.messageService), null);
         registerCommand("grantlist", new GrantListCommand(this, this.grantManager, this.messageService), null);
+        ScreenShareCommand screenShareCommand = new ScreenShareCommand(this.screenShareManager, this.messageService);
+        registerCommand("ss", screenShareCommand, screenShareCommand);
 
         if (this.hookManager.isPlaceholderApiAvailable()) {
             new HippoStaffExpansion(this.vanishManager, this.messageService).register();
         }
 
         this.vanishManager.start();
+        this.screenShareManager.start();
     }
 
     private void saveDefaultMessages() {
@@ -188,6 +198,9 @@ public final class Core extends JavaPlugin {
         }
         if (this.vanishManager != null) {
             this.vanishManager.shutdown();
+        }
+        if (this.screenShareManager != null) {
+            this.screenShareManager.shutdown();
         }
         if (this.redisSyncService != null) {
             this.redisSyncService.close();

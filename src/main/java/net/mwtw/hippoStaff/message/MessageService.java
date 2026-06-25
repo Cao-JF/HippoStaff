@@ -3,6 +3,7 @@ package net.mwtw.hippoStaff.message;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.title.Title;
 import net.mwtw.hippoStaff.Core;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -10,6 +11,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,16 +33,24 @@ public final class MessageService {
     }
 
     public void send(CommandSender sender, String key, OfflinePlayer placeholderPlayer) {
-        String rawMessage = compose(key, placeholderPlayer, Map.of());
-        sender.sendMessage(deserialize(rawMessage));
+        send(sender, key, placeholderPlayer, Map.of());
     }
 
     public void send(CommandSender sender, String key) {
         Player player = sender instanceof Player playerSender ? playerSender : null;
-        send(sender, key, player);
+        send(sender, key, player, Map.of());
     }
 
     public void send(CommandSender sender, String key, OfflinePlayer placeholderPlayer, Map<String, String> replacements) {
+        // A message may be defined as a YAML list to send multiple lines.
+        if (this.messages.isList(key)) {
+            String prefix = useGlobalPrefix(key) ? readOrDefault("format.prefix", "") : "";
+            for (String line : this.messages.getStringList(key)) {
+                String composed = applyPlaceholders(placeholderPlayer, applyReplacements(prefix + line, replacements));
+                sender.sendMessage(deserialize(composed));
+            }
+            return;
+        }
         String rawMessage = compose(key, placeholderPlayer, replacements);
         sender.sendMessage(deserialize(rawMessage));
     }
@@ -48,6 +58,14 @@ public final class MessageService {
     public void actionbar(Player player, String key) {
         String rawMessage = applyPlaceholders(player, readOrDefault(key, "<red>Missing message: " + key));
         player.sendActionBar(deserialize(rawMessage));
+    }
+
+    public void title(Player player, String titleKey, String subtitleKey, Map<String, String> replacements,
+                      long fadeInMs, long stayMs, long fadeOutMs) {
+        Component titleComponent = deserialize(applyReplacements(applyPlaceholders(player, readOrDefault(titleKey, "")), replacements));
+        Component subtitleComponent = deserialize(applyReplacements(applyPlaceholders(player, readOrDefault(subtitleKey, "")), replacements));
+        Title.Times times = Title.Times.times(Duration.ofMillis(fadeInMs), Duration.ofMillis(stayMs), Duration.ofMillis(fadeOutMs));
+        player.showTitle(Title.title(titleComponent, subtitleComponent, times));
     }
 
     public String raw(String key, OfflinePlayer player) {
@@ -80,7 +98,9 @@ public final class MessageService {
     }
 
     private boolean useGlobalPrefix(String key) {
-        return !key.startsWith("staffchat.") && !key.startsWith("private-message.");
+        return !key.startsWith("staffchat.")
+                && !key.startsWith("private-message.")
+                && !key.startsWith("screenshare.");
     }
 
     private String readOrDefault(String key, String fallback) {

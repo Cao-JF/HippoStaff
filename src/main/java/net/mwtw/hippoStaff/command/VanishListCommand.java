@@ -9,6 +9,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -29,17 +31,27 @@ public final class VanishListCommand implements CommandExecutor {
             return true;
         }
 
+        if (!this.vanishManager.isFeatureEnabled()) {
+            this.messageService.send(sender, "vanish.feature-disabled");
+            return true;
+        }
+
         Set<UUID> vanished = this.vanishManager.getVanishedPlayersSnapshot();
-        if (vanished.isEmpty()) {
+        List<Player> onlineVanished = new ArrayList<>();
+        for (UUID uuid : vanished) {
+            Player online = Bukkit.getPlayer(uuid);
+            if (online != null) {
+                onlineVanished.add(online);
+            }
+        }
+        if (onlineVanished.isEmpty()) {
             this.messageService.send(sender, "vanish.list.empty");
             return true;
         }
 
-        this.messageService.send(sender, "vanish.list.header", resolvePlayer(sender), Map.of("count", String.valueOf(vanished.size())));
-        for (UUID uuid : vanished) {
-            Player online = Bukkit.getPlayer(uuid);
-            String name = online != null ? online.getName() : uuid.toString();
-            this.messageService.send(sender, "vanish.list.line", resolvePlayer(sender), Map.of("player", name));
+        this.messageService.send(sender, "vanish.list.header", resolvePlayer(sender), Map.of("count", String.valueOf(onlineVanished.size())));
+        for (Player online : onlineVanished) {
+            this.messageService.send(sender, "vanish.list.line", resolvePlayer(sender), Map.of("player", online.getName()));
         }
         this.messageService.send(sender, "vanish.list.footer");
         return true;

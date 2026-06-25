@@ -22,6 +22,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public final class VanishManager {
     private final Core plugin;
@@ -30,6 +33,7 @@ public final class VanishManager {
     private final Set<UUID> vanishedPlayers;
     private final Map<UUID, Boolean> collidableSnapshot;
     private final Map<UUID, BossBar> activeBossBars;
+    private final ExecutorService storageExecutor;
     private VoiceChatSupport voiceChatSupport;
     private RedisSyncService redisSyncService;
     private BukkitTask actionbarTask;
@@ -43,9 +47,17 @@ public final class VanishManager {
         this.vanishedPlayers = ConcurrentHashMap.newKeySet();
         this.collidableSnapshot = new ConcurrentHashMap<>();
         this.activeBossBars = new ConcurrentHashMap<>();
+        this.storageExecutor = Executors.newSingleThreadExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "HippoStaff-Storage");
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 
     public void start() {
+        if (!isFeatureEnabled()) {
+            return;
+        }
         loadInitialStates();
         applyOnlineStates();
         refreshAllVisibility();
@@ -70,6 +82,14 @@ public final class VanishManager {
         clearAllBossBars();
         clearGhostEffectsForOnlinePlayers();
         restoreAllCollisionStates();
+        this.storageExecutor.shutdown();
+        try {
+            if (!this.storageExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                this.plugin.getLogger().warning("Timed out waiting for pending vanish writes to flush.");
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public void reloadRuntime() {
@@ -85,6 +105,16 @@ public final class VanishManager {
             this.bossbarTask.cancel();
             this.bossbarTask = null;
         }
+        if (!isFeatureEnabled()) {
+            // Feature was turned off via reload: neutralize vanish on this server.
+            clearAllBossBars();
+            clearGhostEffectsForOnlinePlayers();
+            restoreAllCollisionStates();
+            this.vanishedPlayers.clear();
+            refreshAllVisibility();
+            return;
+        }
+        loadInitialStates();
         applyOnlineStates();
         refreshAllVisibility();
         startActionbarTask();
@@ -130,25 +160,34 @@ public final class VanishManager {
         return this.plugin.getConfig().getBoolean("vanish.server-list-hiding.enabled", true);
     }
 
+    public boolean isFeatureEnabled() {
+        return this.plugin.getConfig().getBoolean("vanish.enabled", true);
+    }
+
     public void toggle(Player player) {
         setVanished(player, !isVanished(player.getUniqueId()), true);
     }
 
     public void setVanished(Player player, boolean vanished, boolean notifyPlayer) {
+        if (!isFeatureEnabled()) {
+            if (notifyPlayer) {
+                this.messageService.send(player, "vanish.feature-disabled");
+            }
+            return;
+        }
         UUID uuid = player.getUniqueId();
         if (vanished) {
             this.vanishedPlayers.add(uuid);
-            this.storage.set(uuid, true);
             if (notifyPlayer) {
                 this.messageService.send(player, "vanish.enabled");
             }
         } else {
             this.vanishedPlayers.remove(uuid);
-            this.storage.set(uuid, false);
             if (notifyPlayer) {
                 this.messageService.send(player, "vanish.disabled");
             }
         }
+        persistAsync(uuid, vanished);
         if (this.redisSyncService != null) {
             this.redisSyncService.publish(uuid, vanished);
         }
@@ -161,7 +200,16 @@ public final class VanishManager {
         refreshAllVisibility();
     }
 
+    private void persistAsync(UUID uuid, boolean vanished) {
+        // Storage writes (disk / SQL) must not block the main thread. A single-thread
+        // executor keeps writes ordered so rapid toggles persist in the correct order.
+        this.storageExecutor.execute(() -> this.storage.set(uuid, vanished));
+    }
+
     public void applyExternalState(UUID uuid, boolean vanished) {
+        if (!isFeatureEnabled()) {
+            return;
+        }
         if (vanished) {
             this.vanishedPlayers.add(uuid);
         } else {
@@ -180,19 +228,28 @@ public final class VanishManager {
     }
 
     public void handleJoin(Player player) {
+        if (!isFeatureEnabled()) {
+            return;
+        }
+        // hidePlayer/showPlayer relationships are not retained across reconnects, so the
+        // joining player must immediately re-hide already-online vanished players.
+        refreshAllVisibility();
         Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> {
-            boolean vanished = this.storage.get(player.getUniqueId());
-            if (!vanished) {
-                return;
-            }
+            // Fail closed: if the storage read errors out (returns false), fall back to any
+            // state already known in memory so a vanished staff member is not exposed.
+            boolean vanished = this.storage.get(player.getUniqueId()) || isVanished(player.getUniqueId());
             Bukkit.getScheduler().runTask(this.plugin, () -> {
-                this.vanishedPlayers.add(player.getUniqueId());
-                if (this.voiceChatSupport != null) {
-                    this.voiceChatSupport.apply(player, true);
+                if (vanished) {
+                    this.vanishedPlayers.add(player.getUniqueId());
+                    if (this.voiceChatSupport != null) {
+                        this.voiceChatSupport.apply(player, true);
+                    }
+                    applyCollisionState(player, true);
+                    applyGhostEffectState(player, true);
+                    applyBossbarState(player, true);
                 }
-                applyCollisionState(player, true);
-                applyGhostEffectState(player, true);
-                applyBossbarState(player, true);
+                // Refresh again after the joining player's own state is loaded so the
+                // visibility is correct in both directions.
                 refreshAllVisibility();
             });
         });
@@ -249,6 +306,11 @@ public final class VanishManager {
             Map<UUID, Boolean> states = this.storage.getAll();
             Bukkit.getScheduler().runTask(this.plugin, () -> {
                 for (Map.Entry<UUID, Boolean> entry : states.entrySet()) {
+                    // Players online on this server are authoritative locally; skipping them
+                    // avoids clobbering a just-toggled state whose async write is still pending.
+                    if (Bukkit.getPlayer(entry.getKey()) != null) {
+                        continue;
+                    }
                     if (Boolean.TRUE.equals(entry.getValue())) {
                         this.vanishedPlayers.add(entry.getKey());
                     } else {

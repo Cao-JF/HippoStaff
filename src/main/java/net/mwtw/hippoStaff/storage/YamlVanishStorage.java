@@ -19,7 +19,7 @@ public final class YamlVanishStorage implements VanishStorage {
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         this.file = new File(this.plugin.getDataFolder(), "vanish-data.yml");
         if (!this.file.exists()) {
             this.plugin.saveResource("vanish-data.yml", false);
@@ -28,12 +28,12 @@ public final class YamlVanishStorage implements VanishStorage {
     }
 
     @Override
-    public boolean get(UUID uuid) {
+    public synchronized boolean get(UUID uuid) {
         return this.configuration.getBoolean("players." + uuid, false);
     }
 
     @Override
-    public Map<UUID, Boolean> getAll() {
+    public synchronized Map<UUID, Boolean> getAll() {
         Map<UUID, Boolean> values = new HashMap<>();
         if (this.configuration.getConfigurationSection("players") == null) {
             return values;
@@ -45,13 +45,13 @@ public final class YamlVanishStorage implements VanishStorage {
     }
 
     @Override
-    public void set(UUID uuid, boolean vanished) {
+    public synchronized void set(UUID uuid, boolean vanished) {
         this.configuration.set("players." + uuid, vanished);
         save();
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         save();
     }
 
