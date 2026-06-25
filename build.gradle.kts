@@ -20,6 +20,9 @@ dependencies {
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.6")
     implementation("com.zaxxer:HikariCP:6.3.0")
     implementation("io.lettuce:lettuce-core:6.5.5.RELEASE")
+    implementation("net.dv8tion:JDA:5.3.2") {
+        exclude(module = "opus-java")
+    }
 }
 
 java {
